@@ -5,6 +5,8 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 
+import org.lwjglx.input.Keyboard;
+
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import me.eigenraven.lwjgl3ify.CommonProxy;
 import me.eigenraven.lwjgl3ify.api.InputEvents;
@@ -29,6 +31,30 @@ public class ClientProxy extends CommonProxy {
         if (Config.DEBUG_REGISTER_OPENGL_LOGGER) {
             GLDebugLog.setupDebugMessageCallback();
         }
+        // Populate keyboard-layout-dependent key lookup tables
+        Keyboard.populateKeyLookupTables();
+        registerKeybindHandler();
+    }
+
+    private static final class McKeybindHandler implements InputEvents.KeyboardListener {
+
+        @Override
+        public void onKeyEvent(InputEvents.KeyEvent event) {
+            final Minecraft mc = Minecraft.getMinecraft();
+            if (mc == null) {
+                return;
+            }
+            if (mc.currentScreen != null) {
+                return;
+            }
+            if (event.lwjgl2KeyCode > Keyboard.KEY_NONE) {
+                KeyBinding.setKeyBindState(event.lwjgl2KeyCode, event.action != InputEvents.KeyAction.RELEASED);
+            }
+        }
+    }
+
+    private void registerKeybindHandler() {
+        InputEvents.addKeyboardListener(new McKeybindHandler());
     }
 
     @Override
